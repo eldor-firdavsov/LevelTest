@@ -167,7 +167,7 @@ export default function App() {
           </div>
 
           <div className="space-y-10">
-            {part3.map((q) => (
+            {allQuestions.map((q) => (
               <div key={q.id} className="bg-white border border-slate-200 rounded-3xl p-8 shadow-sm hover:shadow transition-shadow">
                 <div className="flex gap-5 mb-7">
                   <div className="w-11 h-11 bg-blue-100 text-blue-700 rounded-2xl flex items-center justify-center font-bold text-2xl flex-shrink-0">
@@ -176,33 +176,35 @@ export default function App() {
                   <p className="text-xl leading-relaxed font-medium text-slate-800">{q.question}</p>
                 </div>
 
-                <div className="bg-slate-50 border border-slate-100 rounded-2xl p-7 mb-8">
+                <div className={`bg-slate-50 border border-slate-100 rounded-2xl p-7 ${q.id > 20 ? 'mb-8' : ''}`}>
                   <p className="uppercase text-xs tracking-widest text-slate-500 mb-3 font-semibold">Student's Answer</p>
                   <p className="text-lg text-slate-700 leading-relaxed min-h-[70px]">
                     {answers[q.id] || <span className="italic text-slate-400">No answer provided</span>}
                   </p>
                 </div>
 
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <button
-                    onClick={() => setTeacherGrades(prev => ({ ...prev, [q.id]: true }))}
-                    className={`flex-1 py-5 rounded-2xl font-semibold text-lg transition-all flex items-center justify-center gap-3
-                      ${teacherGrades[q.id] === true
-                        ? "bg-emerald-600 text-white shadow-md"
-                        : "border-2 border-slate-300 hover:bg-slate-50 text-slate-700"}`}
-                  >
-                    Correct (1 pt)
-                  </button>
-                  <button
-                    onClick={() => setTeacherGrades(prev => ({ ...prev, [q.id]: false }))}
-                    className={`flex-1 py-5 rounded-2xl font-semibold text-lg transition-all flex items-center justify-center gap-3
-                      ${teacherGrades[q.id] === false
-                        ? "bg-red-600 text-white shadow-md"
-                        : "border-2 border-slate-300 hover:bg-slate-50 text-slate-700"}`}
-                  >
-                    Incorrect (0 pt)
-                  </button>
-                </div>
+                {q.id > 20 && (
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <button
+                      onClick={() => setTeacherGrades(prev => ({ ...prev, [q.id]: true }))}
+                      className={`flex-1 py-5 rounded-2xl font-semibold text-lg transition-all flex items-center justify-center gap-3
+                        ${teacherGrades[q.id] === true
+                          ? "bg-emerald-600 text-white shadow-md"
+                          : "border-2 border-slate-300 hover:bg-slate-50 text-slate-700"}`}
+                    >
+                      Correct (1 pt)
+                    </button>
+                    <button
+                      onClick={() => setTeacherGrades(prev => ({ ...prev, [q.id]: false }))}
+                      className={`flex-1 py-5 rounded-2xl font-semibold text-lg transition-all flex items-center justify-center gap-3
+                        ${teacherGrades[q.id] === false
+                          ? "bg-red-600 text-white shadow-md"
+                          : "border-2 border-slate-300 hover:bg-slate-50 text-slate-700"}`}
+                    >
+                      Incorrect (0 pt)
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -287,7 +289,7 @@ export default function App() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button
               onClick={() => setShowFinal(false)}
-              className="px-12 py-5 border border-slate-300 hover:bg-slate-100 rounded-3xl font-medium transition-all"
+              className="px-12 py-5 bg-white border border-slate-300 hover:bg-slate-100 rounded-3xl font-medium transition-all"
             >
               Back to Review
             </button>
