@@ -46,6 +46,12 @@ export default function App() {
   };
 
   const handleNext = () => {
+    const currentAnswer = answers[currentQuestion.id];
+    if (!currentAnswer || (typeof currentAnswer === 'string' && currentAnswer.trim() === "")) {
+      alert("Please fill out or choose an answer. If you are not sure, you can use the 'Skip' button!");
+      return;
+    }
+
     if (currentQuestionIndex < allQuestions.length - 1) {
       setCurrentQuestionIndex(prev => prev + 1);
     } else {
