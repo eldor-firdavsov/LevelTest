@@ -1,27 +1,27 @@
 import { useState, useEffect } from "react";
 import englishPlacementTest from "./data";
+import "./index.css";
 
 export default function App() {
-  const [started, setStarted] = useState(false);
+  // testState: "guidance" | "testing" | "teacher_review" | "final_result"
+  const [testState, setTestState] = useState("guidance");
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+
   const [answers, setAnswers] = useState({});
-  const [finished, setFinished] = useState(false);
-  const [showFinal, setShowFinal] = useState(false);
-
-  const [login, setLogin] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-
   const [teacherGrades, setTeacherGrades] = useState({});
   const [timeLeft, setTimeLeft] = useState(1800);
 
   const allQuestions = englishPlacementTest.parts.flatMap(p => p.questions);
+  const currentQuestion = allQuestions[currentQuestionIndex];
 
   useEffect(() => {
-    if (!started || finished) return;
-    if (Object.keys(answers).length === allQuestions.length) return;
-
+    if (testState !== "testing") return;
+    
+    // Automatically finish if all questions answered and we are on the last screen? 
+    // Wait, let the user manually finish via Next/Skip on the last screen.
+    // Timer Logic:
     if (timeLeft <= 0) {
-      setFinished(true);
+      setTestState("teacher_review");
       return;
     }
 
@@ -30,18 +30,35 @@ export default function App() {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [started, finished, answers, allQuestions.length, timeLeft]);
+  }, [testState, timeLeft]);
 
   const formatTime = (seconds) => {
     const m = Math.floor(seconds / 60).toString().padStart(2, "0");
     const s = (seconds % 60).toString().padStart(2, "0");
     return `${m}:${s}`;
   };
+
   const part1And2 = allQuestions.filter(q => q.id <= 20);
   const part3 = allQuestions.filter(q => q.id > 20);
 
   const handleSelect = (qid, value) => {
     setAnswers(prev => ({ ...prev, [qid]: value }));
+  };
+
+  const handleNext = () => {
+    if (currentQuestionIndex < allQuestions.length - 1) {
+      setCurrentQuestionIndex(prev => prev + 1);
+    } else {
+      setTestState("teacher_review");
+    }
+  };
+
+  const handleSkip = () => {
+    if (currentQuestionIndex < allQuestions.length - 1) {
+      setCurrentQuestionIndex(prev => prev + 1);
+    } else {
+      setTestState("teacher_review");
+    }
   };
 
   const normalize = (str) => {
@@ -78,130 +95,97 @@ export default function App() {
     }
   };
 
-  const handleLogin = () => {
-    if (login === "admin" && password === "1234") {
-      setStarted(true);
-      setError("");
-    } else {
-      setError("Incorrect username or password");
-    }
-  };
-
-  // 1. Login Screen
-  if (!started) {
+  // 1. Guidance Screen
+  if (testState === "guidance") {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950 flex items-center justify-center px-6 font-sans">
-        <div className="w-full max-w-md">
-          <div className="text-center mb-12">
+      <div style={{ minHeight: '100vh', padding: 'var(--spacing-10) var(--spacing-6)' }} className="flex-center">
+        <div style={{ width: '100%', maxWidth: '40rem' }} className="animate-pop-in">
+          <div className="kid-card" style={{ textAlign: 'center', background: 'white' }}>
+            <div style={{ fontSize: '4rem', marginBottom: 'var(--spacing-4)' }}>👋</div>
+            <h1 style={{ fontSize: '2.5rem', color: 'var(--color-text-primary)', marginBottom: 'var(--spacing-2)' }}>
+              Welcome to the Test!
+            </h1>
+            <p style={{ fontSize: '1.25rem', color: 'var(--color-text-secondary)', fontWeight: '600' }}>
+              Here is how to play:
+            </p>
 
-            <h1 className="text-4xl font-bold tracking-tighter text-white">English Level Test</h1>
-            <p className="text-blue-300 mt-3 text-lg">Admin Access</p>
-          </div>
+            <ul className="guidance-list" style={{ textAlign: 'left' }}>
+              <li>
+                <span>👀</span> Read each question carefully.
+              </li>
+              <li>
+                <span>👆</span> Click the answer you think is right.
+              </li>
+              <li>
+                <span>⏩</span> Click <strong>Next</strong> to move forward.
+              </li>
+              <li>
+                <span>🤷</span> Not sure? Just click <strong>Skip</strong>!
+              </li>
+            </ul>
 
-          <div className="bg-white/95 backdrop-blur-xl border border-white/20 rounded-3xl p-10 shadow-2xl">
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                handleLogin();
-              }}
-              className="space-y-6"
+            <button 
+              className="kid-btn btn-primary" 
+              style={{ fontSize: '1.5rem', padding: 'var(--spacing-5) var(--spacing-12)', marginTop: 'var(--spacing-6)' }}
+              onClick={() => setTestState("testing")}
             >
-              <div>
-                <label className="block text-xs font-semibold tracking-widest text-slate-500 mb-2">
-                  USERNAME
-                </label>
-                <input
-                  type="text"
-                  value={login}
-                  onChange={(e) => setLogin(e.target.value)}
-                  className="w-full border border-slate-300 focus:border-blue-600 rounded-2xl px-6 py-4 text-lg focus:outline-none"
-                  placeholder="admin"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold tracking-widest text-slate-500 mb-2">
-                  PASSWORD
-                </label>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full border border-slate-300 focus:border-blue-600 rounded-2xl px-6 py-4 text-lg focus:outline-none"
-                  placeholder="••••••••"
-                />
-              </div>
-
-              {error && (
-                <p className="text-red-600 text-sm text-center bg-red-50 py-3 rounded-2xl">
-                  {error}
-                </p>
-              )}
-
-              <button
-                type="submit"
-                className="w-full bg-blue-700 hover:bg-blue-800 text-white font-semibold py-4 rounded-2xl text-lg"
-              >
-                Sign In
-              </button>
-            </form>
+              Start Test! 🚀
+            </button>
           </div>
-
-          <p className="text-center text-blue-200/70 text-xs mt-8">Authorized personnel only</p>
         </div>
       </div>
     );
   }
 
-  // 3. Teacher Review Mode (Clean White Background)
-  if (finished && !showFinal) {
+  // 3. Teacher Review Mode
+  if (testState === "teacher_review") {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950 p-6 font-sans text-slate-950">
-        <div className="max-w-3xl mx-auto">
-          <div className="mb-10 flex justify-between items-end border-b border-slate-200 pb-6">
+      <div className="teacher-mode-bg" style={{ minHeight: '100vh', padding: 'var(--spacing-6)', paddingBottom: 'var(--spacing-16)' }}>
+        <div style={{ maxWidth: '48rem', margin: '0 auto' }} className="animate-pop-in">
+          <div className="flex-between" style={{ borderBottom: '4px solid var(--color-border)', paddingBottom: 'var(--spacing-6)', marginBottom: 'var(--spacing-10)' }}>
             <div>
-              <h2 className="text-3xl font-bold tracking-tight text-slate-900">Teacher Review</h2>
-              <p className="text-slate-500 mt-1">Part 3 — Open-ended Answers</p>
+              <h2 style={{ fontSize: '2rem', color: 'var(--color-text-primary)', marginBottom: 'var(--spacing-2)' }}>Teacher Review</h2>
+              <p style={{ color: 'var(--color-text-secondary)', fontWeight: '600', fontSize: '1.125rem' }}>Part 3 — Open-ended Answers</p>
             </div>
-            <div className="text-sm font-medium text-blue-700 bg-blue-100 px-4 py-1 rounded-full">Grading Mode</div>
+            <div className="timer-badge" style={{ background: '#e0f2fe', borderColor: '#bae6fd', color: '#0369a1' }}>
+              Grading Mode
+            </div>
           </div>
 
-          <div className="space-y-10">
+          <div>
             {allQuestions.map((q) => (
-              <div key={q.id} className="bg-white border border-slate-200 rounded-3xl p-8 shadow-sm hover:shadow transition-shadow">
-                <div className="flex gap-5 mb-7">
-                  <div className="w-11 h-11 bg-blue-100 text-blue-700 rounded-2xl flex items-center justify-center font-bold text-2xl flex-shrink-0">
-                    {q.id}
-                  </div>
-                  <p className="text-xl leading-relaxed font-medium text-slate-800">{q.question}</p>
+              <div key={q.id} className="kid-card" style={{ background: 'white' }}>
+                <div style={{ display: 'flex', gap: 'var(--spacing-5)', marginBottom: 'var(--spacing-6)', alignItems: 'center' }}>
+                  <div className="q-badge" style={{ background: '#e0f2fe', borderColor: '#7dd3fc', color: '#0369a1', boxShadow: '0 3px 0 0 #7dd3fc' }}>{q.id}</div>
+                  <p style={{ fontSize: '1.375rem', fontWeight: '700', color: 'var(--color-text-primary)', lineHeight: '1.4' }}>
+                    {q.question}
+                  </p>
                 </div>
 
-                <div className={`bg-slate-50 border border-slate-100 rounded-2xl p-7 ${q.id > 20 ? 'mb-8' : ''}`}>
-                  <p className="uppercase text-xs tracking-widest text-slate-500 mb-3 font-semibold">Student's Answer</p>
-                  <p className="text-lg text-slate-700 leading-relaxed min-h-[70px]">
-                    {answers[q.id] || <span className="italic text-slate-400">No answer provided</span>}
+                <div style={{ background: '#f8fafc', borderRadius: 'var(--radius-lg)', padding: 'var(--spacing-6)', border: '3px solid var(--color-border)' }}>
+                  <p style={{ textTransform: 'uppercase', fontSize: '0.875rem', letterSpacing: '0.05em', color: '#64748b', fontWeight: '700', marginBottom: 'var(--spacing-2)' }}>
+                    Student's Answer
+                  </p>
+                  <p style={{ fontSize: '1.25rem', color: '#334155', fontWeight: '600', minHeight: '2rem' }}>
+                    {answers[q.id] || <span style={{ fontStyle: 'italic', color: '#94a3b8' }}>No answer provided</span>}
                   </p>
                 </div>
 
                 {q.id > 20 && (
-                  <div className="flex flex-col sm:flex-row gap-4">
+                  <div style={{ display: 'flex', gap: 'var(--spacing-4)', marginTop: 'var(--spacing-6)' }}>
                     <button
                       onClick={() => setTeacherGrades(prev => ({ ...prev, [q.id]: true }))}
-                      className={`flex-1 py-5 rounded-2xl font-semibold text-lg transition-all flex items-center justify-center gap-3
-                        ${teacherGrades[q.id] === true
-                          ? "bg-emerald-600 text-white shadow-md"
-                          : "border-2 border-slate-300 hover:bg-slate-50 text-slate-700"}`}
+                      className={`kid-btn ${teacherGrades[q.id] === true ? 'btn-correct' : 'btn-outline'}`}
+                      style={{ flex: 1 }}
                     >
-                      Correct (1 pt)
+                      Correct (+1)
                     </button>
                     <button
                       onClick={() => setTeacherGrades(prev => ({ ...prev, [q.id]: false }))}
-                      className={`flex-1 py-5 rounded-2xl font-semibold text-lg transition-all flex items-center justify-center gap-3
-                        ${teacherGrades[q.id] === false
-                          ? "bg-red-600 text-white shadow-md"
-                          : "border-2 border-slate-300 hover:bg-slate-50 text-slate-700"}`}
+                      className={`kid-btn ${teacherGrades[q.id] === false ? 'btn-incorrect' : 'btn-outline'}`}
+                      style={{ flex: 1 }}
                     >
-                      Incorrect (0 pt)
+                      Incorrect (0)
                     </button>
                   </div>
                 )}
@@ -210,18 +194,19 @@ export default function App() {
           </div>
 
           <button
-            onClick={() => setShowFinal(true)}
-            className="mt-12 w-full bg-blue-700 hover:bg-blue-800 text-white py-5 rounded-3xl text-xl font-semibold tracking-wide transition-all active:scale-[0.985]"
+            onClick={() => setTestState("final_result")}
+            className="kid-btn btn-primary"
+            style={{ width: '100%', marginTop: 'var(--spacing-8)', fontSize: '1.5rem', padding: 'var(--spacing-6)' }}
           >
-            Show Final Result →
+            Show Final Result
           </button>
         </div>
       </div>
     );
   }
 
-  // 4. Final Result Screen (Clean White Background)
-  if (showFinal) {
+  // 4. Final Result Screen
+  if (testState === "final_result") {
     const autoScore = getAutoScore();
     const teacherScore = getTeacherScore();
     const totalScore = autoScore + teacherScore;
@@ -229,74 +214,51 @@ export default function App() {
     const percentage = Math.round((totalScore / 30) * 100);
 
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950 py-20 px-6 font-sans text-slate-950 flex items-center justify-center">
-        <div className="w-full max-w-2xl text-center">
-          <div className="bg-white border border-slate-200 rounded-3xl p-16 shadow-sm mb-12">
-            <div className="inline-flex items-center gap-2 bg-blue-100 text-blue-700 text-xs font-semibold px-6 py-2 rounded-full mb-8">
-              OFFICIAL RESULT
+      <div style={{ minHeight: '100vh', padding: 'var(--spacing-10) var(--spacing-6)', background: 'var(--color-bg-primary)' }} className="flex-center">
+        <div style={{ width: '100%', maxWidth: '42rem' }} className="animate-pop-in">
+          <div className="kid-card" style={{ textAlign: 'center', background: 'white' }}>
+            <div style={{ display: 'inline-block', background: '#fef3c7', color: '#d97706', padding: 'var(--spacing-2) var(--spacing-6)', borderRadius: 'var(--radius-full)', fontSize: '1rem', fontWeight: '700', textTransform: 'uppercase', marginBottom: 'var(--spacing-6)', border: '3px solid #fde68a' }}>
+              Awesome Job!
             </div>
 
-            <h1 className="text-7xl font-black tracking-tighter text-slate-900 mb-3">{finalLevel?.level}</h1>
-            <p className="text-2xl text-slate-600 font-medium">{finalLevel?.label}</p>
+            <h1 style={{ fontSize: '6rem', color: 'var(--color-accent-secondary)', margin: '0' }}>{finalLevel?.level}</h1>
+            <p style={{ fontSize: '1.75rem', color: 'var(--color-text-secondary)', fontWeight: '700' }}>{finalLevel?.label}</p>
 
-            <div className="grid grid-cols-3 gap-8 mt-16 pt-12 border-t border-slate-100">
-              <div>
-                <p className="text-5xl font-bold text-slate-900 mb-1">{totalScore}<span className="text-2xl text-slate-400">/30</span></p>
-                <p className="text-sm font-medium text-slate-500 tracking-widest">TOTAL SCORE</p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--spacing-4)', marginTop: 'var(--spacing-8)', paddingTop: 'var(--spacing-8)', borderTop: '4px solid var(--color-border)' }}>
+              <div className="stat-box">
+                <div className="stat-huge">{totalScore}</div>
+                <div className="stat-label-kid">Score</div>
               </div>
-              <div>
-                <p className="text-5xl font-bold text-slate-900 mb-1">{percentage}%</p>
-                <p className="text-sm font-medium text-slate-500 tracking-widest">ACCURACY</p>
+              <div className="stat-box" style={{ borderColor: '#4ade80', boxShadow: '0 6px 0 0 #4ade80' }}>
+                <div className="stat-huge">{percentage}%</div>
+                <div className="stat-label-kid">Accuracy</div>
               </div>
-              <div>
-                <p className="text-5xl font-bold text-slate-900 mb-1">{totalScore}</p>
-                <p className="text-sm font-medium text-slate-500 tracking-widest">CORRECT ANSWERS</p>
+              <div className="stat-box" style={{ borderColor: '#a78bfa', boxShadow: '0 6px 0 0 #a78bfa' }}>
+                <div className="stat-huge">{totalScore}</div>
+                <div className="stat-label-kid">Correct</div>
               </div>
             </div>
           </div>
 
-          {/* Question Breakdown */}
-          <div className="bg-white border border-slate-200 rounded-3xl p-10 mb-12 shadow-sm">
-            <h3 className="font-semibold text-lg mb-8 text-slate-700">Question Breakdown</h3>
-            <div className="grid grid-cols-6 sm:grid-cols-10 gap-3">
+          <div className="kid-card" style={{ background: 'white' }}>
+            <h3 style={{ fontSize: '1.5rem', color: 'var(--color-text-primary)', marginBottom: 'var(--spacing-6)', textAlign: 'center' }}>Question Breakdown</h3>
+            <div className="breakdown-grid">
               {allQuestions.map(q => {
                 const isCorrect = checkCorrectness(q);
                 return (
-                  <div
-                    key={q.id}
-                    className={`aspect-square rounded-2xl flex items-center justify-center font-semibold text-lg border-2 transition-all
-                      ${isCorrect
-                        ? "bg-emerald-100 border-emerald-400 text-emerald-700"
-                        : "bg-red-100 border-red-400 text-red-700"}`}
-                  >
+                  <div key={q.id} className={`breakdown-item ${isCorrect ? 'correct' : 'incorrect'}`}>
                     {q.id}
                   </div>
                 );
               })}
             </div>
-            <div className="flex justify-center gap-10 mt-10 text-sm font-medium text-slate-600">
-              <div className="flex items-center gap-3">
-                <div className="w-5 h-5 rounded-xl bg-emerald-100 border-2 border-emerald-400"></div>
-                Correct
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="w-5 h-5 rounded-xl bg-red-100 border-2 border-red-400"></div>
-                Incorrect
-              </div>
-            </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button
-              onClick={() => setShowFinal(false)}
-              className="px-12 py-5 bg-white border border-slate-300 hover:bg-slate-100 rounded-3xl font-medium transition-all"
-            >
+          <div style={{ display: 'flex', gap: 'var(--spacing-4)', justifyContent: 'center' }}>
+            <button onClick={() => setTestState("teacher_review")} className="kid-btn btn-outline" style={{ background: 'white' }}>
               Back to Review
             </button>
-            <button
-              onClick={() => window.location.reload()}
-              className="px-12 py-5 bg-blue-700 text-white rounded-3xl font-medium hover:bg-blue-800 transition-all"
-            >
+            <button onClick={() => window.location.reload()} className="kid-btn btn-primary">
               Restart Test
             </button>
           </div>
@@ -305,80 +267,70 @@ export default function App() {
     );
   }
 
-  // 2. Student Test Mode
+  // 2. Student Test Mode (One-by-One)
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950 text-white font-sans pb-32">
-      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-lg border-b border-white/10 shadow-sm">
-        <div className="max-w-4xl mx-auto px-6 py-5 flex justify-between items-center">
-          <div className="flex items-center gap-4">
-
-            <div>
-              <div className="font-bold text-2xl tracking-tight text-slate-950">English Level Test</div>
-              <div className="text-xs text-slate-500 -mt-1">30 Questions • Placement Test</div>
-            </div>
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+      <header className="kid-header">
+        <div className="container flex-between" style={{ padding: '0 var(--spacing-6)' }}>
+          <div>
+            <div className="header-title">English Level Test</div>
+            <div className="header-subtitle">Question {currentQuestionIndex + 1} of {allQuestions.length}</div>
           </div>
 
-          <div className="flex gap-3">
-            <div className="bg-blue-50 text-blue-700 text-sm font-medium px-6 py-2.5 rounded-3xl border border-blue-100 text-center min-w-[80px]">
-              {formatTime(timeLeft)}
-            </div>
-            <div className="bg-blue-50 text-blue-700 text-sm font-medium px-6 py-2.5 rounded-3xl border border-blue-100">
-              {Object.keys(answers).length} / {allQuestions.length}
+          <div style={{ display: 'flex', gap: 'var(--spacing-4)' }}>
+            <div className={`timer-badge ${timeLeft < 300 ? 'timer-danger' : ''}`}>
+              ⏱️ {formatTime(timeLeft)}
             </div>
           </div>
         </div>
       </header>
 
-      <main className="max-w-3xl mx-auto px-6 pt-14">
-        <div className="space-y-20">
-          {allQuestions.map((q) => (
-            <div key={q.id} className="scroll-mt-20">
-              <div className="flex gap-5 mb-7">
-                <div className="w-11 h-11 bg-white/10 backdrop-blur border border-white/20 text-white rounded-2xl flex items-center justify-center font-bold text-2xl flex-shrink-0">
-                  {q.id}
-                </div>
-                <p className="text-[22px] leading-tight font-medium text-white">{q.question}</p>
-              </div>
+      <main className="container" style={{ paddingTop: 'var(--spacing-10)', flex: 1 }}>
+        <div key={currentQuestion.id} className="q-container animate-slide-in">
+          <div className="q-header">
+            <div className="q-badge">{currentQuestion.id}</div>
+            <div className="q-text">{currentQuestion.question}</div>
+          </div>
 
-              <div className="pl-14">
-                {q.options ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {q.options.map((opt, i) => (
-                      <button
-                        key={i}
-                        onClick={() => handleSelect(q.id, opt)}
-                        className={`text-left px-7 py-6 border-2 rounded-3xl text-lg transition-all font-medium
-                          ${answers[q.id] === opt
-                            ? "bg-white border-white text-slate-950 shadow-md"
-                            : "border-white/30 hover:border-white/60 hover:bg-white/10 text-white"}`}
-                      >
-                        {opt}
-                      </button>
-                    ))}
-                  </div>
-                ) : (
-                  <input
-                    type="text"
-                    placeholder="Type your answer here..."
-                    value={answers[q.id] || ""}
-                    onChange={(e) => handleSelect(q.id, e.target.value)}
-                    className="w-full bg-white/10 border border-white/30 focus:border-blue-400 rounded-3xl px-7 py-6 text-lg focus:outline-none transition-all placeholder-white/60 text-white"
-                  />
-                )}
+          <div style={{ paddingLeft: 'calc(3.5rem + var(--spacing-4))' }}>
+            {currentQuestion.options ? (
+              <div className="grid-2">
+                {currentQuestion.options.map((opt, i) => (
+                  <button
+                    key={i}
+                    onClick={() => handleSelect(currentQuestion.id, opt)}
+                    className={`option-btn ${answers[currentQuestion.id] === opt ? 'selected' : ''}`}
+                  >
+                    {opt}
+                  </button>
+                ))}
               </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="mt-24 flex justify-center">
-          <button
-            onClick={() => setFinished(true)}
-            className="px-16 py-6 bg-white hover:bg-blue-50 text-slate-950 font-semibold text-xl rounded-3xl transition-all active:scale-[0.985]"
-          >
-            Finish Test
-          </button>
+            ) : (
+              <input
+                type="text"
+                placeholder="Type your answer here..."
+                value={answers[currentQuestion.id] || ""}
+                onChange={(e) => handleSelect(currentQuestion.id, e.target.value)}
+                className="kid-input"
+              />
+            )}
+          </div>
         </div>
       </main>
+
+      <div className="bottom-nav">
+        <div className="container flex-between" style={{ padding: '0 var(--spacing-6)' }}>
+          <button onClick={handleSkip} className="kid-btn btn-skip">
+            {currentQuestionIndex < allQuestions.length - 1 ? 'Skip Question' : 'Skip & Finish'}
+          </button>
+          <button 
+            onClick={handleNext} 
+            className={`kid-btn ${currentQuestionIndex < allQuestions.length - 1 ? 'btn-primary' : 'btn-finish'}`}
+          >
+            {currentQuestionIndex < allQuestions.length - 1 ? 'Next Question ➡' : 'Finish Test 🎉'}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
