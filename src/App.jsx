@@ -43,15 +43,18 @@ export default function App() {
   };
 
   const handleNext = () => {
-    const currentAnswer = answers[currentQuestion.id];
-    if (!currentAnswer || (typeof currentAnswer === 'string' && currentAnswer.trim() === "")) {
-      alert("Please fill out or choose an answer. If you are not sure, you can use the 'Skip' button!");
-      return;
-    }
-
-    if (currentQuestionIndex < allQuestions.length - 1) {
+    const isLastQuestion = currentQuestionIndex >= allQuestions.length - 1;
+    
+    // Only validate answer if not on the last question
+    if (!isLastQuestion) {
+      const currentAnswer = answers[currentQuestion.id];
+      if (!currentAnswer || (typeof currentAnswer === 'string' && currentAnswer.trim() === "")) {
+        alert("Please fill out or choose an answer. If you are not sure, you can use the 'Skip' button!");
+        return;
+      }
       setCurrentQuestionIndex(prev => prev + 1);
     } else {
+      // On last question, go straight to teacher review
       setTestState("teacher_review");
     }
   };
@@ -266,7 +269,7 @@ export default function App() {
       <div style={{ minHeight: '100vh', padding: 'var(--spacing-10) var(--spacing-6)', background: 'var(--color-bg-primary)' }} className="flex-center">
         <div style={{ width: '100%', maxWidth: '42rem' }} className="animate-pop-in">
           <div className="kid-card" style={{ textAlign: 'center', background: 'white' }}>
-            <div style={{ display: 'inline-block', background: '#fef3c7', color: '#d97706', padding: 'var(--spacing-2) var(--spacing-6)', borderRadius: 'var(--radius-full)', fontSize: '1rem', fontWeight: '700', textTransform: 'uppercase', marginBottom: 'var(--spacing-6)', border: '3px solid #fde68a' }}>
+            <div style={{ display: 'inline-block', background: '#fef3c7', color: '#d97706', padding: 'var(--spacing-2) var(--spacing-6)', borderRadius: 'var(--radius-full)', fontSize: '1rem', fontWeight: '700' }}>
               Awesome Job!
             </div>
 
