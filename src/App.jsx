@@ -17,9 +17,6 @@ export default function App() {
   useEffect(() => {
     if (testState !== "testing") return;
     
-    // Automatically finish if all questions answered and we are on the last screen? 
-    // Wait, let the user manually finish via Next/Skip on the last screen.
-    // Timer Logic:
     if (timeLeft <= 0) {
       setTestState("teacher_review");
       return;
@@ -87,18 +84,54 @@ export default function App() {
     return part3.reduce((acc, q) => acc + (teacherGrades[q.id] === true ? 1 : 0), 0);
   };
 
-  const getLevel = (score) => {
-    return englishPlacementTest.grading.levels.find(l => score >= l.min && score <= l.max);
-  };
-
   const checkCorrectness = (q) => {
     if (q.id <= 20) {
       const userAns = answers[q.id];
+      if (!userAns) return false;
       if (q.options) return userAns === q.correctAnswer;
       return normalize(userAns) === normalize(q.correctAnswer);
     } else {
       return teacherGrades[q.id] === true;
     }
+  };
+
+  // Upgraded dynamic diagnostic system evaluating performance sequentially across levels
+  const calculateLevelResults = () => {
+    const levelsOrder = ["A1", "A2", "B1", "B2", "C1", "C2"];
+    const performanceMap = {};
+    
+    levelsOrder.forEach(lvl => {
+      performanceMap[lvl] = { total: 0, correct: 0 };
+    });
+
+    allQuestions.forEach(q => {
+      const lvl = q.level || "A1";
+      if (performanceMap[lvl]) {
+        performanceMap[lvl].total += 1;
+        if (checkCorrectness(q)) {
+          performanceMap[lvl].correct += 1;
+        }
+      }
+    });
+
+    let finalAssignedLevel = "A1";
+    const MASTERY_THRESHOLD = 0.60; // 60% accuracy required to pass a level structure tier
+
+    for (let i = 0; i < levelsOrder.length; i++) {
+      const lvl = levelsOrder[i];
+      const data = performanceMap[lvl];
+      
+      if (data.total > 0) {
+        const accuracy = data.correct / data.total;
+        if (accuracy >= MASTERY_THRESHOLD) {
+          finalAssignedLevel = lvl;
+        } else {
+          break; 
+        }
+      }
+    }
+
+    return { finalAssignedLevel, performanceMap };
   };
 
   // 1. Guidance Screen
@@ -216,8 +249,18 @@ export default function App() {
     const autoScore = getAutoScore();
     const teacherScore = getTeacherScore();
     const totalScore = autoScore + teacherScore;
-    const finalLevel = getLevel(totalScore);
     const percentage = Math.round((totalScore / 30) * 100);
+
+    const { finalAssignedLevel } = calculateLevelResults();
+
+    const levelLabels = {
+      "A1": "Beginner",
+      "A2": "Elementary",
+      "B1": "Intermediate",
+      "B2": "Upper-Intermediate",
+      "C1": "Advanced",
+      "C2": "Proficiency"
+    };
 
     return (
       <div style={{ minHeight: '100vh', padding: 'var(--spacing-10) var(--spacing-6)', background: 'var(--color-bg-primary)' }} className="flex-center">
@@ -227,8 +270,8 @@ export default function App() {
               Awesome Job!
             </div>
 
-            <h1 style={{ fontSize: '6rem', color: 'var(--color-accent-secondary)', margin: '0' }}>{finalLevel?.level}</h1>
-            <p style={{ fontSize: '1.75rem', color: 'var(--color-text-secondary)', fontWeight: '700' }}>{finalLevel?.label}</p>
+            <h1 style={{ fontSize: '6rem', color: 'var(--color-accent-secondary)', margin: '0' }}>{finalAssignedLevel}</h1>
+            <p style={{ fontSize: '1.75rem', color: 'var(--color-text-secondary)', fontWeight: '700' }}>{levelLabels[finalAssignedLevel] || "Assessing"}</p>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--spacing-4)', marginTop: 'var(--spacing-8)', paddingTop: 'var(--spacing-8)', borderTop: '4px solid var(--color-border)' }}>
               <div className="stat-box">
