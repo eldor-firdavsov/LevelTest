@@ -361,15 +361,6 @@ export default function App() {
     const isLastInLevel = currentQuestionInLevel === levelQuestions.length - 1;
     const progressPercent = ((currentQuestionInLevel + 1) / levelQuestions.length) * 100;
 
-    const getBadgeTypeClass = (type) => {
-      switch(type) {
-        case 'multiple_choice': return 'type-mc';
-        case 'fill_blank': return 'type-fill';
-        case 'translate': return 'type-translate';
-        default: return '';
-      }
-    };
-
     const getLevelDotClass = (index) => {
       if (index < currentLevelIndex) return 'completed';
       if (index === currentLevelIndex) return 'current';
@@ -422,9 +413,6 @@ export default function App() {
           <div key={currentQuestion.id} className="q-container animate-slide-in">
             <div className="q-header">
               <div className="q-badge">{currentQuestion.id}</div>
-              <div className={`q-badge ${getBadgeTypeClass(currentQuestion.type)}`} style={{ fontSize: '0.875rem' }}>
-                {currentQuestion.type.replace('_', ' ')}
-              </div>
               <div className="q-text">{currentQuestion.prompt}</div>
             </div>
 
@@ -465,13 +453,13 @@ export default function App() {
         <div className="bottom-nav">
           <div className="container flex-between" style={{ padding: '0 var(--spacing-6)' }}>
             <button onClick={handleSkip} className="kid-btn btn-skip">
-              {isLastInLevel ? 'Skip & Finish' : 'Skip Question'}
+              {isLastInLevel ? 'Skip Question' : 'Skip Question'}
             </button>
             <button
               onClick={handleNext}
               className={`kid-btn ${isLastInLevel ? 'btn-finish' : 'btn-primary'}`}
             >
-              {isLastInLevel ? 'Finish Test 🎉' : 'Next Question ➡'}
+              {isLastInLevel ? 'Next Question' : 'Next Question ➡'}
             </button>
           </div>
         </div>
